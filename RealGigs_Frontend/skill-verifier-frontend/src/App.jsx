@@ -1,17 +1,45 @@
-import React, { useState } from "react";
-import WalletConnector from "./components/WalletConnector";
-import SkillRequest from "./components/SkillRequest";
+import React, { useEffect, useState } from "react";
+import Web3 from "web3";
+import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./contract";
+import AdminDashboard from "./AdminDashboard";
+import InterviewerDashboard from "./InterviewerDashboard";
+import WorkerDashboard from "./WorkerDashboard";
 
-const App = () => {
-  const [walletAddress, setWalletAddress] = useState(null);
+function App() {
+  const [role, setRole] = useState("loading");
+
+  useEffect(() => {
+    const detectRole = async () => {
+      const web3 = new Web3(window.ethereum);
+      const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+      const accounts = await web3.eth.getAccounts();
+      const user = accounts[0];
+
+      const admin = await contract.methods.admin().call();
+      if (user.toLowerCase() === admin.toLowerCase()) {
+        setRole("admin");
+      } else {
+        const isInterviewer = await contract.methods.authorizedInterviewers(user).call();
+        if (isInterviewer) {
+          setRole("interviewer");
+        } else {
+          setRole("worker");
+        }
+      }
+    };
+
+    detectRole();
+  }, []);
+
+  if (role === "loading") return <div>🔄 Detecting role...</div>;
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>🧾 Blockchain Skill Verifier</h1>
-      <WalletConnector onWalletConnected={setWalletAddress} />
-      {walletAddress && <SkillRequest walletAddress={walletAddress} />}
+    <div className="p-4">
+      {role === "admin" && <AdminDashboard />}
+      {role === "interviewer" && <InterviewerDashboard />}
+      {role === "worker" && <WorkerDashboard />}
     </div>
   );
-};
+}
 
 export default App;
