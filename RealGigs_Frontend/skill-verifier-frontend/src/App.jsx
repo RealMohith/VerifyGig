@@ -1,43 +1,51 @@
+// src/App.jsx
 import React, { useEffect, useState } from "react";
 import Web3 from "web3";
-import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./contract";
+import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./contrac";
 import AdminDashboard from "./AdminDashboard";
 import InterviewerDashboard from "./InterviewerDashboard";
 import WorkerDashboard from "./WorkerDashboard";
 
 function App() {
-  const [role, setRole] = useState("loading");
+  const [account, setAccount] = useState("");
+  const [contract, setContract] = useState(null);
+  const [role, setRole] = useState("");
 
   useEffect(() => {
-    const detectRole = async () => {
-      const web3 = new Web3(window.ethereum);
-      const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
-      const accounts = await web3.eth.getAccounts();
-      const user = accounts[0];
+    const loadBlockchain = async () => {
+      if (window.ethereum) {
+        const web3 = new Web3(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const accounts = await web3.eth.getAccounts();
+        const deployedContract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
 
-      const admin = await contract.methods.admin().call();
-      if (user.toLowerCase() === admin.toLowerCase()) {
-        setRole("admin");
-      } else {
-        const isInterviewer = await contract.methods.authorizedInterviewers(user).call();
-        if (isInterviewer) {
-          setRole("interviewer");
+        setAccount(accounts[0]);
+        setContract(deployedContract);
+
+        const adminAddress = await deployedContract.methods.admin().call();
+
+        if (accounts[0].toLowerCase() === adminAddress.toLowerCase()) {
+          setRole("admin");
         } else {
-          setRole("worker");
+          const isInterviewer = await deployedContract.methods.authorizedInterviewers(accounts[0]).call();
+          if (isInterviewer) setRole("interviewer");
+          else setRole("worker");
         }
+      } else {
+        alert("Please install MetaMask to use this dApp");
       }
     };
 
-    detectRole();
+    loadBlockchain();
   }, []);
 
-  if (role === "loading") return <div>🔄 Detecting role...</div>;
-
   return (
-    <div className="p-4">
-      {role === "admin" && <AdminDashboard />}
-      {role === "interviewer" && <InterviewerDashboard />}
-      {role === "worker" && <WorkerDashboard />}
+    <div>
+      <h1 style={{ textAlign: "center" }}>🎓 RealGigs Skill Verifier</h1>
+      <p style={{ textAlign: "center" }}>Connected account: {account}</p>
+      {role === "admin" && <AdminDashboard contract={contract} account={account} />}
+      {role === "interviewer" && <InterviewerDashboard contract={contract} account={account} />}
+      {role === "worker" && <WorkerDashboard contract={contract} account={account} />}
     </div>
   );
 }
