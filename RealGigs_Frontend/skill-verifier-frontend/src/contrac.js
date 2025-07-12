@@ -127,6 +127,19 @@ export const CONTRACT_ABI = [
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "getAllSkillIds",
+      "outputs": [
+        {
+          "internalType": "string[]",
+          "name": "",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "string",

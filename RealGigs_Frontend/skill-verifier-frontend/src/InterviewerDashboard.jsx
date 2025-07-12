@@ -5,12 +5,23 @@ function InterviewerDashboard({ contract, account }) {
   const [skills, setSkills] = useState([]);
   const [notes, setNotes] = useState("");
 
-  useEffect(() => {
-    const fetchSkills = async () => {
-      const ids = await contract.methods.allSkillIds().call();
+useEffect(() => {
+  const fetchSkills = async () => {
+    try {
+      const ids = await contract.methods.getAllSkillIds().call();
+
+
+
+      if (!ids || ids.length === 0) {
+        console.log("No skills submitted yet.");
+        setSkills([]);
+        return;
+      }
+
       const pending = [];
 
       for (let id of ids) {
+        if (!id) continue; // skip invalid IDs
         const skill = await contract.methods.skills(id).call();
         if (!skill.verified && skill.interviewer === "0x0000000000000000000000000000000000000000") {
           pending.push(skill);
@@ -18,10 +29,15 @@ function InterviewerDashboard({ contract, account }) {
       }
 
       setSkills(pending);
-    };
+    } catch (err) {
+      console.error("❌ Error fetching skills:", err);
+      setSkills([]);
+    }
+  };
 
-    fetchSkills();
-  }, [contract]);
+  fetchSkills();
+}, [contract]);
+
 
   const verify = async (id) => {
     try {

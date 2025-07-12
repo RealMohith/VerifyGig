@@ -97,4 +97,8 @@ contract SkillVerifier {
     function getAllInterviewers() public view returns (address[] memory) {
         return interviewerList;
     }
+    function getAllSkillIds() public view returns (string[] memory) {
+    return allSkillIds;
+}
+
 }
